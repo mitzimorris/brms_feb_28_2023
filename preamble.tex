@@ -1,0 +1,53 @@
+\setbeamertemplate{titlepage}[plain]
+\hyphenpenalty=10000
+\hbadness=10000
+\AtBeginEnvironment{quote}{\raggedright}
+
+\logo{\includegraphics[width=0.05\paperwidth]{img/logo.png}}
+\setbeamerfont{title}{size={\fontsize{20}{18}}}
+\setbeamerfont{subtitle}{size={\fontsize{16}{14}}}
+\setbeamerfont{author}{size={\fontsize{11}{8}}}
+\linespread{1.3}
+\definecolor{cc}{HTML}{cddcf0}
+\setbeamercolor{frametitle}{bg=cc}
+\setbeamercolor{sidebar}{bg=cc}
+
+\makeatletter
+  \setbeamertemplate{sidebar \beamer@sidebarside}%{sidebar theme}
+  {
+    \beamer@tempdim=\beamer@sidebarwidth%
+    \advance\beamer@tempdim by -6pt%
+    \advance\beamer@tempdim by -6pt%
+    {\usebeamerfont{title in sidebar}%
+      \vskip1.5em%
+      \hskip3pt%
+    }%
+    \insertverticalnavigation{\beamer@sidebarwidth}%
+    \vfill
+    \ifx\beamer@sidebarside\beamer@lefttext%
+    \else%
+      \usebeamercolor{normal text}%
+      \llap{\usebeamertemplate***{navigation symbols}\hskip0.1cm}%
+      \vskip2pt%
+    \fi%
+}%
+\makeatother
+
+\newcommand\given[1][]{\:#1\vert\:}
+
+%\renewcommand{\indent}{\hspace*{2em}}
+
+\usepackage{caption}
+\captionsetup{justification=raggedright,singlelinecheck=false}
+
+\usepackage[export]{adjustbox}
+
+
+\usepackage{colonequals}
+
+\def\begincols{\begin{columns}}
+\def\begincol{\begin{column}}
+\def\endcol{\end{column}}
+\def\endcols{\end{columns}}
+\def\beginits{\begin{itemize}}
+\def\endits{\end{itemize}}

@@ -1,0 +1,152 @@
+---
+title: "Bayesian Data Analysis with BRMS"
+author: |
+  | Mitzi Morris
+  | Stan Development Team
+  | Columbia University, New York NY
+date: Feb 28, 2023
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, cache=FALSE, message=FALSE, error=FALSE, warning=FALSE, comment=NA, out.width='90%')
+```
+
+## Getting Started
+
+Install, load packages and data used in this notebook
+
+```{r}
+packages <- c("readr", "ggplot2", "brms", "bayesplot", "loo", "projpred", "cmdstanr")
+require(packages)
+suppressMessages(  lapply(packages, library, character.only = TRUE)  )
+options(brms.backend = "cmdstanr")
+```
+
+The data and models are taken from chapter 12 of the book [Data Analysis
+Using Regression and Multilevel/Hierarchical
+Models](http://www.stat.columbia.edu/~gelman/arm/) by Andrew Gelman and
+Jennifer Hill, Cambridge Press, 2006.
+
+## Example: EPA Measurements of Radon Levels in the Home
+
+This example is taken from chapter 12 of the book [Data Analysis Using
+Regression and Multilevel/Hierarchical
+Models](http://www.stat.columbia.edu/~gelman/arm/) by Andrew Gelman and
+Jennifer Hill, Cambridge Press, 2006.
+
+In the early 1990s, the US Environmental Protection Agency (EPA) did a
+national survey of home radon levels. Gelman and Hill analyze data for
+the state of Minnesota.
+
+-   Survey data
+    -   919 measurements of radon gas levels in residential houses
+    -   85 counties in Minnesota have survey data, 2 counties have no
+        data.
+    -   measurements were taken in the basement, if any, else on the
+        ground floor.
+    -   another EPA dataset provides the soil uranium level for each
+        county
+-   Regression model
+    -   outcome: home radon level (on the log scale)
+    -   predictors: county, floor, uranium (on the log scale)
+
+The data file is `data/mn_radon.csv` and the data is loaded into
+dataframe `mn_radon`.
+
+```{r}
+mn_radon <- read_csv("data/mn_radon.csv")
+mn_radon$county_id <- as.factor(mn_radon$county_id)
+print(mn_radon)
+```
+
+## Modeling Choices
+
+Structure in the data: houses can be grouped by county.
+
+-   Modeling choices
+    -   Complete pooling: all counties are alike. Run a single
+        regression to estimate average home radon level in MN.
+    -   No pooling: all 85 counties are different. Run 85 separate
+        regressions to estimate home radon levels by county.
+    -   Partial pooling: counties are similar. Build a multi-level
+        regression to share information across counties.
+
+## Complete Pooling Model
+
+The simplest model is the complete pooling model which estimates the
+home log radon level based on the floor on which the measurement was
+taken.
+
+The complete pooling formula looks just like a simple linear regression
+formula
+
+    log_radon ~ floor
+
+We plug this into the `brm` function and summarize the fit.
+
+```{r}
+fit_complete_pool = brm(log_radon ~ floor, data=mn_radon)
+summary(fit_complete_pool)
+```
+
+The function `conditional_effects` plots the outcome on the y axis and
+the predictor on the x axis.
+
+```{r}
+conditional_effects(fit_complete_pool)
+```
+
+## No Pooling Model
+
+The no pooling formula estimates individual per-county intercepts, each
+intercept is estimated separately.
+
+    log_radon ~ 0 + floor + county_id
+
+```{r}
+fit_no_pool = brm(log_radon ~ 0 + floor + county_id, data=mn_radon)
+summary(fit_no_pool)
+conditional_effects(fit_no_pool, effects = c("floor:county_id"))
+```
+
+## Partial Pooling Model: varying slope
+
+The partial pooling formula estimates per-county intercepts which drawn
+from the same distribution which is estimated jointly with the rest of
+the model parameters. The `1` is the intercept co-efficient. The
+estimates across counties will all have the same slope.
+
+    log_radon ~ floor + (1 | county_id)
+
+```{r}
+fit_part_pool_1 = brm(log_radon ~ floor + (1 | county_id), data=mn_radon)
+summary(fit_part_pool_1)
+bayesplot::mcmc_intervals(fit_part_pool_1, regex_pars = "r_county") +  bayesplot::yaxis_text(FALSE)
+```
+
+## Partial Pooling Model: varying slope, varying intercept
+
+The varying-slope, varying intercept model adds `floor` to the
+group-level co-efficients. Now estimates across counties will all have
+varying slope.
+
+    log_radon ~ floor + (1 + floor | county_id)
+
+```{r}
+fit_part_pool_2 = brm(log_radon ~ floor + (1 + floor | county_id), data=mn_radon)
+bayesplot::mcmc_intervals(fit_part_pool_2, regex_pars = "r_county") +  bayesplot::yaxis_text(FALSE)
+```
+
+## Partial Pooling Model: varying slope, varying intercept, another predictor
+
+```{r}
+fit_part_pool_3 = brm(log_radon ~ floor + log_uranium + (1 + floor | county_id), data=mn_radon)
+bayesplot::mcmc_intervals(fit_part_pool_3, regex_pars = "r_county") +  bayesplot::yaxis_text(FALSE)
+```

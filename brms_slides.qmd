@@ -1,0 +1,246 @@
+---
+title: "Bayesian Data Analysis with BRMS"
+author: |
+  | Mitzi Morris
+  | Stan Development Team
+  | Columbia University, New York NY
+date: Feb 28, 2023
+format:
+  beamer:
+    aspectratio: 169
+    theme: "Berkeley"
+    colortheme: dove
+    include-in-header: preamble.tex
+    navigation: horizontal
+    dev: png 
+---
+
+# BRMS:  Bayesian Regression and Multilevelmodeling in Stan
+
+The [BRMS package](https://paul-buerkner.github.io/brms/) fits Bayesian models using an extended R formula syntax.
+\vspace{0.2in}
+
+\fontsize{9pt}{9.4}\selectfont
+```
+fit <- brm(Reaction ~ 1 + Days + (1 + Days|Subject), data = sleepstudy)
+```
+\normalsize
+
+\vspace{0.2in}
+
+\begincols
+\begincol{0.2\linewidth}        
+  \includegraphics[width=0.95\linewidth]{img/brms.png}
+\endcol
+
+\begincol{0.75\linewidth}        
+ [https://paul-buerkner.github.io/brms/](https://paul-buerkner.github.io/brms/)
+\endcol
+\endcols
+
+\vspace{0.1in}
+
+# Why should I use BRMS?
+
+\vspace{-0.2in}
+
+* Simplifies model development:
+  + Use extended R formula syntax to specify the likelihood
+  + User `set_prior` function to specify priors for all parameters
+
+\vspace{0.1in}
+
+* Supports Bayesian workflow
+  + BRMS package provides prior and posterior predictive checks
+  + Works with downstream analysis packages [bayesplot](https://mc-stan.org/projpred/), [projpred](https://mc-stan.org/projpred/), and [loo](https://mc-stan.org/projpred/)
+
+\vspace{0.1in}
+
+* BRMS-generated Stan programs are efficient and robust
+
+# Bayesian Workflow
+\vspace{-0.15in}
+
+Model development
+
+\tightlist
+* Fit data to model (simulated or real)
+* Evaluate the fit:
+  + How good is the fit?
+  + How sensitive are the results to the modeling assumptions?
+  + Do the predictions make sense?
+
+\vspace{0.1in}
+
+Model Comparison
+
+\tightlist
+* Some models are too simple
+  + Learn what we lose when features are omitted
+* Some models are too complex
+  + Learn the limits of what we can fit given the data
+
+# Modeling Terminology and Notation
+
+\vspace{-0.2in}
+\fontsize{10.5pt}{11.5}\selectfont
+\tightlist
+
+* $y$ - data
+
+* $\theta$ - parameters
+
+* $\text{p}(y, \theta )$ - **joint probability distribution** of the data and parameters
+
+*  $\text{p}(\theta )$ - **prior probability distribution** - the probability of the parameters before any data are observed
+
+*  $\text{p}(\theta \given  y)$ - **posterior probability distribution** - the probability of the parameters conditional on the data (i.e., after seeing the data).
+\vspace{0.05in}
+
+*  $\text{p}(y \given \theta)$ 
+   + if $y$ is fixed, this is the **likelihood function**
+   + if $\theta$ is fixed, this is the **sampling distribution**
+\normalsize
+
+# Multilevel Regression
+\vspace{-0.2in}
+McElreath:  "Multilevel regression deserves to be the default form of regression."
+\fontsize{9pt}{9.5}\selectfont
+_Statistical Rethinking_, 2nd ed, section 1.3.2
+\normalsize
+
+Multilevel regression models can handle structured data.
+
+\tightlist
+* Almost all data has some structure
+  + Observations are repeated or ordered or come from different (nested) groups, e.g.
+  + Hierarchical: students in classrooms in schools in districts in states in regions
+  + Auto-regressive:  time series, spatial data, spatio-temporal data
+* With a multilevel models, we can say more about the data
+  + Estimate variation on all levels of the model
+  + Predict values of new groups not originally present in the data
+
+# Regression Models in R
+\vspace{-0.2in}
+
+\tightlist
+* Pre-existing packages `lm`, `glm`, `lme4`
+  + `lm`, `glm` - single-level linear models
+  + `lme4` - hierarchal linear model
+
+\vspace{0.05in}
+* Stan (2010) - build a better `lme4`
+  + Stan probabilistic programming language based on BUGS
+  + NUTS-HMC algorithm more efficient MCMC sampler
+
+\vspace{0.05in}
+* BRMS (2016) - simplify model specification.
+  + Use `lme4`-style formulas and R functions to wrap Stan
+  + User specifies formula, priors, BRMS generates Stan program
+
+\vspace{0.05in}
+* RStanARM (2015) - precompiled Stan models
+
+
+# Linear Regression
+
+Linear regression relates a scalar outcome (the dependent variable "y")
+to one or more predictors (the independent variable "x").  For a single predictor $x$
+
+\tightlist
+* $y_i = \alpha \, + \beta\,x_i + {\epsilon}_i$
+  + $\alpha$ is the _intercept_, the offset from zero on the x-axis
+  + $\beta$ is the _slope_, the multiplier applied to x.
+  + ${\epsilon}_i$ is the error term
+
+
+When ${\epsilon}_i$ are independent errors drawn
+from a normal distribution with mean $0$, standard deviation $\sigma$,
+the __linear model__ is
+
+\tightlist
+* $y_i \sim \mathrm{N}( \alpha \, + \beta\,x_i, \sigma )$
+  + $\alpha \, + \beta\,x_i$ is the _linear predictor_
+  + $\sigma$ is the variance
+
+
+# Generalized Linear Regression
+\vspace{-0.2in}
+
+We extend the simple linear model $y_i \sim \mathrm{N}( \alpha \, + \beta\,x_i, \sigma )$ 
+to a multilevel general linear regression as follows
+
+\fontsize{10.5pt}{11.5}\selectfont
+\tightlist
+* Instead of a normal distribution $\mathrm{N}$, we can use any distributional **family** $\mathrm{D}$,\newline
+(e.g., a Beta distribution), correspondingly, we generalize the variance parameter $\sigma$ to any family-specific parameter $\theta$
+
+* We generalize $\alpha \, + \beta\,x_i$ to $\eta$, any linear predictor
+
+* The linear predictor can be transformed by any _inverse link function_ $\mathit{f}$
+
+* We use group-level subscripts to allow for group-level parameters.
+\normalsize
+
+\vspace{0.05in}
+General Multilevel Model:  $y_i \sim \mathrm{D}(\, \mathit{f}(\eta_i), \theta )$
+
+\vspace{0.1in}
+Don't let these definitions obscure the fact we are defining a function comprised of **intercept** and **slope** terms.
+
+
+
+# Regression Formula Syntax
+
+\vspace{-0.2in}
+A regression formula has the general form $\mathrm{LHS} \sim \mathrm{RHS}$
+\fontsize{9pt}{9.4}\selectfont
+```
+Reaction ~ 1 + Days + (1 + Days|Subject)
+```
+\normalsize
+
+\tightlist
+* The left-hand side is the outcome, in the simplest case, a single observed value.
+
+* The right-hand side is the linear predictor, consisting of
+
+  + "Population-level" terms (a.k.a. fixed effects)
+
+  + "Group-level" terms (a.k.a. random effects) which vary by grouping factor.
+Group-level terms are of the form `(coefs | group)`, where `group` is a grouping factor
+and `coefs` refer to the predictors whose effects vary with the levels of
+the grouping factor.
+
+  + The number `1` corresponds to an intercept term
+
+# BRMS Processing
+
+\includegraphics[width=0.95\linewidth]{img/brms_processing.png}
+
+
+# Notebook
+
+
+link to online notebook and data here
+
+# References
+
+\fontsize{10.5pt}{11.5}\selectfont
+* https://paul-buerkner.github.io/brms/articles/index.html
+
+* https://xcelab.net/rm/statistical-rethinking/
+
+* https://journal.r-project.org/archive/2018/RJ-2018-017/RJ-2018-017.pdf
+
+* https://www.barelysignificant.com/slides/RGUG2019#1
+
+* https://ourcodingclub.github.io/tutorials/brms/
+
+* https://onlinelibrary.wiley.com/doi/pdf/10.1111/eth.13225
+
+* https://mc-stan.org/users/documentation/case-studies/tutorial_rstanarm.html
+
+\normalsize
+
+
