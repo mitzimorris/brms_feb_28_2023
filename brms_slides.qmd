@@ -221,8 +221,8 @@ the grouping factor.
 
 # Notebook
 
+Online notebook:  https://github.com/mitzimorris/brms_feb_28_2023/blob/main/brms_notebook.Rmd
 
-link to online notebook and data here
 
 # References
 
